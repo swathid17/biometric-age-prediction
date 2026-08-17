@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Biometric Age Prediction</title>
+  
+  <!-- Clean Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+  <!-- MediaPipe FaceMesh CDN for Real-Time Face & Landmark Tracking -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Top Header Navigation -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5">
+            <path d="M23 7l-7 5 7 5V7z"></path>
+            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+          </svg>
+        </div>
+        <h1 class="brand-title">Biometric Age Prediction</h1>
+      </div>
+
+      <!-- Header Actions -->
+      <div class="header-actions">
+        <div class="backend-pill-header" id="header-api-badge" title="FastAPI Backend: http://127.0.0.1:8000">
+          <span class="live-pulse" id="header-pulse"></span>
+          <span id="header-api-text">API: 127.0.0.1:8000</span>
+        </div>
+
+        <button class="btn-xai-header" id="btn-header-xai" title="View reason for age prediction">
+          <span>🧠 Explainability</span>
+        </button>
+
+        <button class="theme-btn" id="theme-toggle" title="Toggle Light / Dark Theme">
+          <span id="theme-icon">🌙</span>
+          <span id="theme-text">Dark Mode</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Dashboard Layout -->
+  <main class="main-container">
+    
+    <div class="dashboard-grid">
+      
+      <!-- LEFT: Live Face Scanner Viewport -->
+      <div class="scanner-card">
+        <div class="card-header">
+          <div class="status-indicator">
+            <span class="dot-live" id="stream-dot"></span>
+            <span id="stream-status-text">Camera Idle</span>
+          </div>
+          <div class="header-pills">
+            <span class="mode-pill" id="current-mode-pill">Live Mode</span>
+            <span class="fps-tag" id="fps-counter">60 FPS</span>
+          </div>
+        </div>
+
+        <!-- Video & Real Landmark Canvas -->
+        <div class="video-wrapper" id="video-wrapper">
+          <video id="webcam" autoplay playsinline muted></video>
+          <canvas id="face-canvas"></canvas>
+
+          <!-- Standby Start Screen -->
+          <div class="standby-overlay" id="standby-overlay">
+            <div class="standby-box">
+              <div class="camera-avatar">📷</div>
+              <h3>Biometric Face Scanner</h3>
+              <p>Turn on camera or upload a photo to detect facial landmarks and estimate age.</p>
+              
+              <div class="standby-actions-group">
+                <button class="btn-primary" id="btn-start-camera">
+                  ▶ Turn On Camera
+                </button>
+                <label class="btn-secondary file-label" for="photo-input-standby">
+                  📁 Upload Photo
+                  <input type="file" id="photo-input-standby" accept="image/*" style="display: none;">
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Face Detection Warning / Prompt -->
+          <div class="face-prompt-pill" id="face-prompt-pill" style="display: none;">
+            <span>Looking for face... Please face the camera</span>
+          </div>
+        </div>
+
+        <!-- Bottom Controls Bar -->
+        <div class="controls-bar">
+          <button class="btn-primary" id="btn-toggle-cam">
+            <span>Turn On Camera</span>
+          </button>
+
+          <button class="btn-secondary" id="btn-freeze" disabled>
+            <span>Freeze Frame</span>
+          </button>
+
+          <label class="btn-secondary file-label" for="photo-input" title="Upload an image to predict age">
+            <span>📁 Upload Image</span>
+            <input type="file" id="photo-input" accept="image/*" style="display: none;">
+          </label>
+
+          <button class="btn-xai-trigger" id="btn-open-xai" title="Explain the reason for this age prediction">
+            <span>🧠 Explainability</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Result & Status Panel -->
+      <div class="details-panel">
+        
+        <!-- Primary Age Output Card -->
+        <div class="age-output-card">
+          <span class="card-tag">ESTIMATED AGE</span>
+          <div class="age-main-row">
+            <span class="age-big" id="display-age">--</span>
+            <span class="age-unit">Years Old</span>
+          </div>
+          <div class="age-sub-row">
+            <span id="display-margin">Margin of Error: &plusmn; 2.1 yrs</span>
+            <span id="display-confidence">Confidence: --%</span>
+          </div>
+        </div>
+
+        <!-- Live Status Card -->
+        <div class="status-card">
+          <h3 class="panel-subtitle">Biometric Tracking Status</h3>
+          <div class="status-item">
+            <span class="label">Face Detection:</span>
+            <span class="value" id="status-face-detected">Waiting for camera / photo</span>
+          </div>
+          <div class="status-item">
+            <span class="label">Landmarks Tracked:</span>
+            <span class="value" id="status-landmark-count">0 Nodes</span>
+          </div>
+          <div class="status-item">
+            <span class="label">Pattern Alignment:</span>
+            <span class="value highlight">Geometric Internal Mesh</span>
+          </div>
+          <div class="status-item">
+            <span class="label">HUD Position:</span>
+            <span class="value">Below Face Bounding Box</span>
+          </div>
+        </div>
+
+        <!-- Backend REST API Integration Card -->
+        <div class="backend-card">
+          <div class="backend-header">
+            <h3 class="panel-subtitle" style="margin-bottom: 0;">Backend API Service</h3>
+            <span class="backend-pill online" id="backend-status-badge">
+              <span class="live-pulse" id="backend-pulse"></span>
+              <span id="backend-status-text">Connected</span>
+            </span>
+          </div>
+          <div class="status-item">
+            <span class="label">Server URL:</span>
+            <span class="value"><code class="api-meta-tag" id="backend-url-display">http://127.0.0.1:8000</code></span>
+          </div>
+          <div class="status-item">
+            <span class="label">API Endpoint:</span>
+            <span class="value"><code class="api-meta-tag">POST /api/predict-age</code></span>
+          </div>
+          <div class="status-item">
+            <span class="label">Live Inferences:</span>
+            <span class="value highlight" id="backend-request-count">0 requests sent</span>
+          </div>
+          <div class="status-item">
+            <span class="label">Roundtrip Latency:</span>
+            <span class="value" id="backend-latency">-- ms</span>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ==========================================================================
+       EXPLAINABILITY (REASON FOR THAT AGE) MODAL
+       ========================================================================== -->
+  <div class="xai-modal-backdrop" id="xai-modal" role="dialog" aria-modal="true">
+    <div class="xai-modal-container">
+      
+      <!-- Modal Header -->
+      <div class="xai-modal-header">
+        <div class="xai-header-title-group">
+          <div class="xai-icon-bubble">🧠</div>
+          <div>
+            <h2>Prediction Explainability</h2>
+            <p>Reason and biological factors for the estimated age</p>
+          </div>
+        </div>
+        <button class="modal-close-btn" id="btn-close-xai" title="Close modal">&times;</button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="xai-modal-body">
+        
+        <!-- Primary Reason Box (Dynamically updated by backend) -->
+        <div class="xai-reason-summary-box">
+          <span class="reason-tag">PRIMARY REASON FOR ESTIMATION</span>
+          <h3 class="reason-title" id="xai-age-headline">Estimated Age: 24.5 Years</h3>
+          <p class="reason-text" id="xai-main-reason">
+            The model predicted this age based on high facial skin elasticity, minimal periocular crease depth (smooth eye corners), subtle nasolabial groove definition, and firm mandibular jawline contour.
+          </p>
+        </div>
+
+        <!-- Biological Feature Contributors -->
+        <div class="xai-section">
+          <h3 class="xai-section-heading">Contributing Facial Factors</h3>
+          
+          <div class="xai-features-grid">
+            
+            <div class="xai-feature-card">
+              <div class="f-card-header">
+                <span class="f-icon">👁️</span>
+                <div>
+                  <strong>Eye Region (Periocular)</strong>
+                  <span class="f-sub" id="reason-eye-text">Smooth / Low depth wrinkles</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="xai-feature-card">
+              <div class="f-card-header">
+                <span class="f-icon">👄</span>
+                <div>
+                  <strong>Smile Lines (Nasolabial)</strong>
+                  <span class="f-sub" id="reason-smile-text">Subtle cheek-to-lip groove</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="xai-feature-card">
+              <div class="f-card-header">
+                <span class="f-icon">✨</span>
+                <div>
+                  <strong>Forehead Texture</strong>
+                  <span class="f-sub" id="reason-forehead-text">High smoothness / High elasticity</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="xai-feature-card">
+              <div class="f-card-header">
+                <span class="f-icon">📐</span>
+                <div>
+                  <strong>Jawline & Mandible</strong>
+                  <span class="f-sub" id="reason-jaw-text">Firm structural contour</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="xai-modal-footer">
+        <span class="footer-note" id="xai-backend-status">Backend Explanation Engine Active</span>
+        <button class="btn-primary" id="btn-close-xai-bottom">Done</button>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="js/script.js"></script>
+</body>
+</html>
