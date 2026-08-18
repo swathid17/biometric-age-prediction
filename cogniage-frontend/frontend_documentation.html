@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CogniAge AI — Frontend Architecture & Tech Stack Documentation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #1a4cd2;
+      --primary-dark: #0b2b80;
+      --primary-light: #eef3ff;
+      --text-dark: #0f172a;
+      --text-muted: #475569;
+      --border: #cbd5e1;
+      --bg: #ffffff;
+      --accent-yellow: #ca8a04;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Poppins', system-ui, sans-serif;
+      color: var(--text-dark);
+      background: #f8fafc;
+      line-height: 1.6;
+      padding: 2rem 1rem;
+    }
+
+    .doc-page {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 3rem 3.5rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      border: 1px solid #e2e8f0;
+    }
+
+    .print-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    .btn-print {
+      background: var(--primary);
+      color: #ffffff;
+      border: none;
+      padding: 0.6rem 1.4rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-print:hover { background: var(--primary-dark); }
+
+    .doc-header {
+      border-bottom: 3px solid var(--primary);
+      padding-bottom: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .doc-badge {
+      display: inline-block;
+      background: var(--primary-light);
+      color: var(--primary);
+      font-weight: 700;
+      font-size: 0.8rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: var(--primary-dark);
+      line-height: 1.2;
+      margin-bottom: 0.4rem;
+    }
+
+    .doc-meta {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+    }
+
+    h2 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-top: 2rem;
+      margin-bottom: 0.85rem;
+      padding-bottom: 0.35rem;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin-top: 1.25rem;
+      margin-bottom: 0.4rem;
+    }
+
+    p, li {
+      font-size: 0.92rem;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+
+    ul, ol {
+      padding-left: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    li { margin-bottom: 0.35rem; }
+
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      background: #f1f5f9;
+      color: var(--primary-dark);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.25rem 0;
+      font-size: 0.88rem;
+    }
+
+    th, td {
+      border: 1px solid #e2e8f0;
+      padding: 0.75rem 1rem;
+      text-align: left;
+    }
+
+    th {
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      font-weight: 700;
+    }
+
+    tr:nth-child(even) { background: #f8fafc; }
+
+    .highlight-box {
+      background: var(--primary-light);
+      border-left: 4px solid var(--primary);
+      padding: 1rem 1.25rem;
+      border-radius: 0 8px 8px 0;
+      margin: 1.25rem 0;
+    }
+
+    .highlight-box strong { color: var(--primary-dark); }
+
+    @media print {
+      body { background: #ffffff; padding: 0; }
+      .doc-page { box-shadow: none; border: none; padding: 0; }
+      .print-bar { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="doc-page">
+    
+    <div class="print-bar">
+      <span>📄 <strong>Cognizant Hackathon Technical Report</strong></span>
+      <button class="btn-print" onclick="window.print()">🖨️ Print / Save as PDF</button>
+    </div>
+
+    <div class="doc-header">
+      <span class="doc-badge">Technical Architecture & Stack Documentation</span>
+      <h1>Biometric Age Prediction — Frontend Architecture</h1>
+      <div class="doc-meta">
+        <strong>Project:</strong> CogniAge AI • <strong>Hackathon:</strong> Cognizant Hackathon (Use Case #5) • <strong>Domain:</strong> Computer Vision & XAI
+      </div>
+    </div>
+
+    <h2>1. Executive Summary</h2>
+    <p>
+      The frontend for <strong>Problem Statement #5 (Age Prediction from Biometric Data)</strong> is engineered as a high-performance, real-time Computer Vision interface. It operates directly in the browser with 60 FPS hardware acceleration to detect facial boundaries, map a 31-node geometric landmark triangulation pattern strictly inside the face, and display biological age estimation and Explainable AI (XAI) feature breakdowns.
+    </p>
+
+    <h2>2. Top-to-Bottom Frontend Technology Stack</h2>
+    
+    <table>
+      <thead>
+        <tr>
+          <th>Layer</th>
+          <th>Technology Used</th>
+          <th>Version / Standard</th>
+          <th>Purpose & Role</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Markup & Structure</strong></td>
+          <td>HTML5</td>
+          <td>W3C HTML5 Standard</td>
+          <td>Semantic DOM layout, native <code>&lt;video&gt;</code> webcam stream binding, overlay <code>&lt;canvas&gt;</code> rendering context, accessible modal dialogs.</td>
+        </tr>
+        <tr>
+          <td><strong>Design & Styling</strong></td>
+          <td>Vanilla CSS3</td>
+          <td>CSS Level 3 / Custom Properties</td>
+          <td>Design tokens for <strong>Royal Blue & White</strong> theme, CSS Grid & Flexbox, hardware-accelerated animations, Light/Dark mode variables.</td>
+        </tr>
+        <tr>
+          <td><strong>Programming Language</strong></td>
+          <td>Vanilla JavaScript</td>
+          <td>ECMAScript 2022 (ES6+)</td>
+          <td>Asynchronous event handling, 60 FPS animation loop (<code>requestAnimationFrame</code>), DOM manipulation, state persistence.</td>
+        </tr>
+        <tr>
+          <td><strong>Camera & Media API</strong></td>
+          <td>Web MediaDevices API</td>
+          <td><code>navigator.mediaDevices.getUserMedia</code></td>
+          <td>Direct hardware access to client camera stream with high-resolution user-facing video frames at zero network latency.</td>
+        </tr>
+        <tr>
+          <td><strong>Real-Time Vision Engine</strong></td>
+          <td>MediaPipe FaceMesh</td>
+          <td>Google MediaPipe v0.4</td>
+          <td>Client-side machine learning pipeline generating 468 3D facial landmarks in real-time without requiring server compute.</td>
+        </tr>
+        <tr>
+          <td><strong>Graphics & HUD Overlay</strong></td>
+          <td>HTML5 Canvas 2D API</td>
+          <td>W3C 2D Context</td>
+          <td>Real-time mathematical drawing of the geometric polygon mesh, cyber corner brackets, and floating age badge below the face.</td>
+        </tr>
+        <tr>
+          <td><strong>State & Persistence</strong></td>
+          <td>Web Storage API</td>
+          <td><code>window.localStorage</code></td>
+          <td>Zero-cookie persistence of the user's selected theme (Light Mode vs. Dark Mode).</td>
+        </tr>
+        <tr>
+          <td><strong>File Processing</strong></td>
+          <td>HTML5 File API</td>
+          <td><code>FileReader</code></td>
+          <td>Asynchronous base64 image decoding for the custom photo upload feature.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>3. Side-by-Side Alternatives & Why We Selected Our Stack</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th>Chosen Stack</th>
+          <th>Alternative</th>
+          <th>Why Chosen vs Why Alternative Rejected</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Framework</strong></td>
+          <td><strong>Vanilla JS (ES6+)</strong></td>
+          <td>React.js / Next.js / Angular / Vue</td>
+          <td><strong>Why Chosen:</strong> Zero build step, runs instantly on any machine by double-clicking <code>index.html</code>, no Node.js/npm dependencies.<br><strong>Why Rejected:</strong> React/Next.js introduces heavy virtual DOM overhead, node module bloat, and build pipeline complexity.</td>
+        </tr>
+        <tr>
+          <td><strong>Styling</strong></td>
+          <td><strong>Vanilla CSS3 Tokens</strong></td>
+          <td>Tailwind CSS / Bootstrap</td>
+          <td><strong>Why Chosen:</strong> Direct control over exact HSL Royal Blue tokens, fluid responsiveness, and instant Light/Dark mode switching.<br><strong>Why Rejected:</strong> Tailwind requires build tools (PostCSS/Node); Bootstrap is rigid and lacks biometric HUD styling.</td>
+        </tr>
+        <tr>
+          <td><strong>Computer Vision</strong></td>
+          <td><strong>MediaPipe + Canvas 2D</strong></td>
+          <td>OpenCV.js / WebGL / Three.js</td>
+          <td><strong>Why Chosen:</strong> 60 FPS performance, lightweight landmark tracking, easy mathematical 2D line and polygon triangulation.<br><strong>Why Rejected:</strong> Three.js is heavyweight 3D overhead; OpenCV.js has huge WebAssembly download sizes (&gt;10MB).</td>
+        </tr>
+        <tr>
+          <td><strong>Application Delivery</strong></td>
+          <td><strong>Web Browser Single Page</strong></td>
+          <td>Python Tkinter / PyQt5 / Streamlit</td>
+          <td><strong>Why Chosen:</strong> Cross-platform on any desktop/laptop/tablet without installing Python desktop GUI packages.<br><strong>Why Rejected:</strong> Tkinter looks outdated; Streamlit re-executes whole scripts on every interaction and cannot do custom real-time canvas overlays.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>4. Key Architectural Features</h2>
+    
+    <h3>A. Real Face Landmark Tracking & Geometric Mesh</h3>
+    <ul>
+      <li>Tracks 31 key anatomical nodes (forehead hexagon, eye contours, nose bridge, cheeks, mouth, and chin tip) matching the project specification.</li>
+      <li>Constrained strictly <strong>INSIDE the detected face boundaries</strong>; no pattern leaks into the background.</li>
+    </ul>
+
+    <h3>B. Floating Age HUD Tag Below Face</h3>
+    <ul>
+      <li>Dynamically floats 12px <strong>strictly below the detected face bounding box</strong>, moving synchronously as the user tilts or moves their head.</li>
+      <li>Formats numerical age, margin of error (<code>&plusmn;2.1 yrs</code>), and confidence score.</li>
+    </ul>
+
+    <h3>C. Explainable AI (XAI) Architecture</h3>
+    <div class="highlight-box">
+      <strong>Explainability in Biometric Age Estimation:</strong>
+      <p>Prevents algorithmic bias and black-box compliance risks by quantifying four biological aging zones: (1) Periocular/Canthal lines, (2) Nasolabial sulcus prominence, (3) Forehead skin texture smoothness, and (4) Mandibular jawline contour elasticity.</p>
+    </div>
+
+    <h3>D. Decoupled Backend REST Connector</h3>
+    <p>
+      The frontend is completely decoupled from the machine learning model. Teammates can expose a standard REST endpoint:
+      <code>POST /api/predict-age</code> returning <code>{ "age": 24.5, "confidence": 0.96 }</code> for seamless plug-and-play integration.
+    </p>
+
+  </div>
+
+</body>
+</html>
