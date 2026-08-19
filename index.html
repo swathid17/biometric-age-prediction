@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CogniAge — Biometric Age AI</title>
+  <meta name="description" content="CogniAge - Biometric Age AI with Grad-CAM explainability.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- MediaPipe FaceMesh -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand" id="brand-home-link" style="cursor: pointer;">
+        <div class="brand-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8" r="4"/>
+            <path d="M6 20v-2a6 6 0 0 1 12 0v2"/>
+            <path d="M20 8h2M2 8h2"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">CogniAge</span>
+          <span class="brand-sub">BIOMETRIC AGE AI</span>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <div class="api-badge" id="header-api-badge" title="Server Connection Status">
+          <span class="api-dot" id="header-pulse"></span>
+          <span id="header-api-text">API: Connected</span>
+        </div>
+
+        <button class="hdr-btn hdr-btn-xai" id="btn-header-xai" title="Learn how the age prediction works">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+          <span>Explain</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= PAGE 1: LANDING VIEW ================= -->
+  <section class="page-view active" id="page-landing">
+    <div class="landing-container">
+      
+      <div class="landing-card">
+        <div class="landing-illustration">
+          <img src="assets/age-stages.jpg" alt="Life Stages from Baby to Senior" class="landing-stages-img">
+        </div>
+
+        <div class="landing-actions">
+          <button class="btn-hero-navigate" id="btn-navigate-scan">
+            <span>How Old Am I?</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+
+          <label class="btn-hero-secondary" for="photo-input-landing">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <span>Or Upload a Photo</span>
+            <input type="file" id="photo-input-landing" accept="image/*" style="display:none;">
+          </label>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= PAGE 2: SCANNER & ESTIMATION VIEW ================= -->
+  <section class="page-view" id="page-scanner" style="display: none;">
+    <div class="main-container">
+      
+      <!-- Top Navigation Bar inside Scanner Page -->
+      <div class="scanner-page-nav">
+        <button class="btn-back-home" id="btn-back-home">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          <span>Back to Home</span>
+        </button>
+        <span class="scanner-page-title">Live Age Estimation</span>
+      </div>
+
+      <!-- Main Interactive Grid -->
+      <div class="dashboard-grid">
+
+        <!-- LEFT: Scanner / Camera Viewport Card -->
+        <div class="scanner-card">
+          <div class="card-header">
+            <div class="status-indicator">
+              <span class="dot-live" id="stream-dot"></span>
+              <span id="stream-status-text">Ready</span>
+            </div>
+            <div class="header-pills">
+              <span class="mode-pill" id="current-mode-pill">Standby</span>
+              <span class="fps-tag" id="fps-counter" style="display:none;">-- FPS</span>
+            </div>
+          </div>
+
+          <!-- Viewport Box with Overlays -->
+          <div class="video-wrapper" id="video-wrapper">
+            <video id="webcam" autoplay playsinline muted></video>
+            <canvas id="face-canvas"></canvas>
+
+            <!-- In-Box Loading Indicator -->
+            <div class="viewport-loader" id="viewport-loader" style="display: none;">
+              <div class="clean-spinner"></div>
+              <div class="vloader-title" id="vloader-title">Analyzing Face…</div>
+              <div class="vloader-sub" id="vloader-sub">Calculating age estimation</div>
+            </div>
+
+            <!-- Standby Start Screen -->
+            <div class="standby-overlay" id="standby-overlay">
+              <div class="standby-box">
+                <div class="standby-illustration">
+                  <img src="assets/age-stages.jpg" alt="Age Stages" class="standby-banner-img">
+                </div>
+                <h2 class="standby-heading">Camera Ready</h2>
+                <p class="standby-desc">Click below to start your webcam or choose a portrait photo.</p>
+
+                <div class="standby-actions">
+                  <button class="btn-cam-start" id="btn-start-camera">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                    <span>Start Webcam</span>
+                  </button>
+
+                  <!-- Drag & Drop Upload Zone -->
+                  <div class="drop-zone" id="drop-zone">
+                    <div class="drop-zone-inner">
+                      <div class="drop-icon">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                      </div>
+                      <div class="drop-text"><strong>Drag &amp; drop photo</strong> or browse</div>
+                      <label class="drop-btn" for="photo-input-standby">
+                        Browse Photo
+                        <input type="file" id="photo-input-standby" accept="image/*" style="display:none;">
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Completion Action Banner inside Viewport -->
+            <div class="session-complete-banner" id="session-complete-banner" style="display: none;">
+              <div class="complete-header">
+                <div class="complete-badge-pill">✓ Age Estimation Complete</div>
+                <h3 class="complete-title">Here is your result!</h3>
+              </div>
+
+              <div class="complete-summary-grid">
+                <div class="summary-chip">
+                  <span class="chip-label">ESTIMATED AGE</span>
+                  <span class="chip-val highlight" id="banner-age">--</span>
+                </div>
+                <div class="summary-chip">
+                  <span class="chip-label">AGE BRACKET</span>
+                  <span class="chip-val" id="banner-range">--</span>
+                </div>
+                <div class="summary-chip">
+                  <span class="chip-label">CONFIDENCE</span>
+                  <span class="chip-val" id="banner-conf">--%</span>
+                </div>
+                <div class="summary-chip">
+                  <span class="chip-label">LIVENESS</span>
+                  <span class="chip-val green" id="banner-liveness">Verified ✓</span>
+                </div>
+              </div>
+
+              <div class="complete-actions">
+                <button class="complete-btn complete-btn-primary" id="btn-predict-again">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                  <span>Check Again</span>
+                </button>
+                <button class="complete-btn complete-btn-xai" id="btn-view-explanation">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                  <span>Explain (Why this Age?)</span>
+                </button>
+                <label class="complete-btn complete-btn-secondary" for="photo-input-complete">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  <span>Upload Another Photo</span>
+                  <input type="file" id="photo-input-complete" accept="image/*" style="display:none;">
+                </label>
+              </div>
+            </div>
+
+            <!-- Face Detection Prompt Pill -->
+            <div class="face-prompt-pill" id="face-prompt-pill" style="display:none;">
+              <span class="pill-dot"></span> Center your face in frame…
+            </div>
+
+            <!-- Viewport mode badge -->
+            <div class="viewport-badge" id="viewport-badge" style="display:none;">
+              <span id="viewport-badge-text">PHOTO MODE</span>
+            </div>
+          </div>
+
+          <!-- Controls Bar -->
+          <div class="controls-bar">
+            <button class="ctrl-btn ctrl-primary" id="btn-toggle-cam">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              <span id="toggle-cam-text">Start Camera</span>
+            </button>
+
+            <button class="ctrl-btn ctrl-secondary" id="btn-freeze" disabled>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+              <span id="freeze-text">Freeze / Finalize</span>
+            </button>
+
+            <label class="ctrl-btn ctrl-secondary ctrl-upload" for="photo-input" title="Upload portrait image">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <span>Upload Photo</span>
+              <input type="file" id="photo-input" accept="image/*" style="display:none;">
+            </label>
+
+            <button class="ctrl-btn ctrl-xai" id="btn-open-xai" title="Explain prediction details">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 1 1 7.072 0l-.548.547A3.374 3.374 0 0 0 14 18.469V19a2 2 0 1 1-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+              <span>Explain</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- RIGHT: Results & Biometric Status Panel -->
+        <div class="details-panel" id="results-panel">
+
+          <!-- Age Output Card -->
+          <div class="age-output-card" id="age-output-card">
+            <div class="age-card-top">
+              <span class="card-tag">ESTIMATED AGE</span>
+              <div class="age-confidence-badge" id="age-confidence-badge">
+                <span class="conf-dot"></span>
+                <span id="display-confidence">Confidence: --%</span>
+              </div>
+            </div>
+            <div class="age-main-row">
+              <span class="age-big" id="display-age">--</span>
+              <div class="age-unit-stack">
+                <span class="age-unit">Years</span>
+                <span class="age-unit-sub">Estimated Age</span>
+              </div>
+            </div>
+            <div class="age-range-pill-row">
+              <span class="age-range-label">Age Bracket:</span>
+              <span class="age-range-tag" id="display-age-range">--</span>
+            </div>
+            <div class="age-sub-row">
+              <span id="display-margin">Ready for estimation</span>
+            </div>
+            <div class="age-meter">
+              <div class="age-meter-bar" id="age-meter-bar" style="width: 0%"></div>
+            </div>
+
+            <div class="age-explain-cta">
+              <button class="btn-card-explain" onclick="document.getElementById('btn-open-xai').click()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                <span>Explain How This Was Calculated</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Biometric Status Card -->
+          <div class="status-card">
+            <div class="status-card-header">
+              <div class="status-card-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+              </div>
+              <h3 class="panel-subtitle">Detection &amp; Liveness Status</h3>
+            </div>
+            <div class="status-item">
+              <span class="label">Face Detection:</span>
+              <span class="value" id="status-face-detected">Waiting for camera</span>
+            </div>
+            <div class="status-item">
+              <span class="label">Eye Liveness:</span>
+              <span class="value liveness-pill standby" id="status-liveness">Standby</span>
+            </div>
+            <div class="status-item">
+              <span class="label">Eye Blink &amp; Movement:</span>
+              <span class="value highlight" id="status-motion-metric">--</span>
+            </div>
+            <div class="status-item">
+              <span class="label">Process Status:</span>
+              <span class="value highlight" id="status-prediction-state">Idle</span>
+            </div>
+            <div class="status-item">
+              <span class="label">Input Source:</span>
+              <span class="value highlight" id="status-input-mode">Standby</span>
+            </div>
+          </div>
+
+          <!-- Hidden internal status tags kept for JS compatibility -->
+          <div style="display:none;">
+            <span id="status-landmark-count">0 Nodes</span>
+            <span id="privacy-pill-text">Private</span>
+            <span id="privacy-buffer-status">Purged</span>
+            <span id="backend-status-badge" class="backend-pill online">
+              <span id="backend-pulse" class="live-pulse"></span>
+              <span id="backend-status-text">Connected</span>
+            </span>
+            <span id="backend-url-display">127.0.0.1:8000</span>
+            <span id="backend-request-count">0</span>
+            <span id="backend-latency">-- ms</span>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== EXPLAINABILITY MODAL ========== -->
+  <div class="xai-modal-backdrop" id="xai-modal" role="dialog" aria-modal="true">
+    <div class="xai-modal-container">
+
+      <div class="xai-modal-header">
+        <div class="xai-header-title-group">
+          <div class="xai-icon-bubble">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+          </div>
+          <div>
+            <h2>How the Age Estimate Works</h2>
+            <p>Visual explanation of the facial features observed</p>
+          </div>
+        </div>
+        <button class="modal-close-btn" id="btn-close-xai" aria-label="Close modal">&times;</button>
+      </div>
+
+      <div class="xai-modal-body">
+
+        <!-- Result Summary Box -->
+        <div class="xai-reason-summary-box">
+          <span class="reason-tag">FINAL RESULT</span>
+          <h3 class="reason-title" id="xai-age-headline">Estimated Age: -- Years</h3>
+          <p class="reason-text" id="xai-main-reason">
+            The model analyzes key visible facial regions such as eye perimeter, cheek contours, forehead smoothness, and jawline firmness to calculate your estimated age.
+          </p>
+        </div>
+
+        <!-- 3 Insight Cards -->
+        <div class="xai-insights-grid">
+          <div class="xai-insight-card">
+            <div class="insight-icon">🔍</div>
+            <div class="insight-content">
+              <strong>Visual Reasoning</strong>
+              <p id="xai-reasoning-text">Clear facial landmarks and skin texture patterns were identified to estimate age.</p>
+            </div>
+          </div>
+          <div class="xai-insight-card">
+            <div class="insight-icon">🎯</div>
+            <div class="insight-content">
+              <strong>Confidence</strong>
+              <p id="xai-conf-text">Confidence: --% based on clear lighting and frontal face angle.</p>
+            </div>
+          </div>
+          <div class="xai-insight-card">
+            <div class="insight-icon">👁️</div>
+            <div class="insight-content">
+              <strong>Liveness Check</strong>
+              <p id="xai-liveness-text">Natural eye movement and face positioning confirmed.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Visual 3-Stage Pipeline: Normal Image vs Aligned Face vs Focus Heatmap -->
+        <div class="xai-section">
+          <h3 class="xai-section-heading">Visual Focus Heatmap (Grad-CAM)</h3>
+          <div class="xai-disclaimer-note">
+            💡 <strong>What you're seeing:</strong> Highlighted warm areas (red/yellow) indicate the specific facial zones the model focused on most when estimating your age.
+          </div>
+          <div class="gradcam-display">
+            
+            <!-- Stage 1: Raw Image -->
+            <div class="gradcam-item">
+              <div class="gradcam-label">1. Captured Photo</div>
+              <img id="xai-normal-face-img" src="" alt="Captured Photo" class="gradcam-img" />
+              <div class="gradcam-sublabel">Original Image</div>
+            </div>
+
+            <div class="gradcam-arrow">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </div>
+
+            <!-- Stage 2: Aligned Face -->
+            <div class="gradcam-item">
+              <div class="gradcam-label">2. Aligned Face</div>
+              <img id="xai-cropped-face-img" src="" alt="Aligned Face" class="gradcam-img" />
+              <div class="gradcam-sublabel">Centered ROI</div>
+            </div>
+
+            <div class="gradcam-arrow">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </div>
+
+            <!-- Stage 3: Focus Heatmap -->
+            <div class="gradcam-item">
+              <div class="gradcam-label">3. Focus Heatmap</div>
+              <img id="xai-heatmap-img" src="" alt="Focus Heatmap" class="gradcam-img gradcam-heatmap" />
+              <div class="gradcam-sublabel">Model Attention</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Key Feature Breakdown -->
+        <div class="xai-section">
+          <h3 class="xai-section-heading">Analyzed Facial Regions</h3>
+          <div class="xai-features-grid">
+            <div class="xai-feature-card">
+              <div class="f-card-header">
+                <div class="f-icon-wrap">👁️</div>
+                <div>
+                  <strong>Eye Region</strong>
+                  <span class="f-sub" id="reason-eye-text">Eye contours &amp; depth</span>
+                </div>
+              </div>
+            </div>
+            <div class="xai-feature-card">
+              <div class="f-card-header">
+                <div class="f-icon-wrap">👄</div>
+                <div>
+                  <strong>Smile Lines &amp; Cheeks</strong>
+                  <span class="f-sub" id="reason-smile-text">Smile line contours</span>
+                </div>
+              </div>
+            </div>
+            <div class="xai-feature-card">
+              <div class="f-card-header">
+                <div class="f-icon-wrap">✨</div>
+                <div>
+                  <strong>Forehead &amp; Brow</strong>
+                  <span class="f-sub" id="reason-forehead-text">Forehead smoothness</span>
+                </div>
+              </div>
+            </div>
+            <div class="xai-feature-card">
+              <div class="f-card-header">
+                <div class="f-icon-wrap">📐</div>
+                <div>
+                  <strong>Jawline &amp; Contour</strong>
+                  <span class="f-sub" id="reason-jaw-text">Facial outline firmness</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="xai-modal-footer">
+        <span class="footer-note" id="xai-backend-status">
+          🔒 In-Memory Analysis
+        </span>
+        <button class="btn-primary" id="btn-close-xai-bottom">Done</button>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="js/script.js"></script>
+</body>
+</html>
